@@ -32,8 +32,25 @@ public class TinyRemapperMappingsHelper {
 	public static IMappingProvider create(TinyTree mappings, String from, String to) {
 		return (acceptor) -> {
 			for (ClassDef classDef : mappings.getClasses()) {
-				String className = classDef.getName(from);
-				acceptor.acceptClass(className, classDef.getName(to));
+				String className;
+
+				try {
+					className = classDef.getRawName(from);
+				} catch (ArrayIndexOutOfBoundsException e) {
+					// TODO get rid of try-catch by using mapping-io
+					className = classDef.getRawName(to);
+				}
+
+				String dstName;
+
+				try {
+					dstName = classDef.getRawName(to);
+				} catch (ArrayIndexOutOfBoundsException e) {
+					// TODO get rid of try-catch by using mapping-io
+					dstName = className;
+				}
+
+				acceptor.acceptClass(className, dstName);
 
 				for (FieldDef field : classDef.getFields()) {
 					acceptor.acceptField(memberOf(className, field.getName(from), field.getDescriptor(from)), field.getName(to));
