@@ -21,10 +21,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,7 @@ import net.fabricmc.loader.api.LanguageAdapter;
 import net.fabricmc.loader.api.MappingResolver;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.ObjectShare;
+import net.fabricmc.loader.api.SemanticVersion;
 import net.fabricmc.loader.api.entrypoint.EntrypointContainer;
 import net.fabricmc.loader.impl.discovery.ArgumentModCandidateFinder;
 import net.fabricmc.loader.impl.discovery.ClasspathModCandidateFinder;
@@ -69,7 +72,7 @@ public final class FabricLoaderImpl extends net.fabricmc.loader.FabricLoader {
 
 	public static final int ASM_VERSION = Opcodes.ASM9;
 
-	public static final String VERSION = "0.14.11";
+	public static final String VERSION = "0.14.11+babric";
 	public static final String MOD_ID = "fabricloader";
 
 	public static final String CACHE_DIR_NAME = ".fabric"; // relative to game dir
