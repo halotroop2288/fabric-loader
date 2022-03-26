@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -40,6 +42,7 @@ import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.fabricmc.loader.impl.lib.gson.JsonReader;
 import net.fabricmc.loader.impl.lib.gson.JsonToken;
 import net.fabricmc.loader.impl.util.ExceptionUtil;
+import net.fabricmc.loader.impl.util.FileSystemUtil;
 import net.fabricmc.loader.impl.util.LoaderUtil;
 import net.fabricmc.loader.impl.util.SimpleClassPath;
 import net.fabricmc.loader.impl.util.SimpleClassPath.CpEntry;
@@ -841,6 +844,10 @@ public final class McVersionLookup {
 				}
 			};
 		}
+
+		private final String methodNameHint;
+		private String result;
+		private boolean foundInMethodHint;
 	}
 
 	private abstract static class InsnFwdMethodVisitor extends MethodVisitor {
