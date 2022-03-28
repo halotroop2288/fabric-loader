@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -83,6 +84,7 @@ public class MinecraftGameProvider implements GameProvider {
 	private final List<Path> miscGameLibraries = new ArrayList<>(); // libraries not relevant for loader's uses
 	private Collection<Path> validParentClassPath; // computed parent class path restriction (loader+deps)
 	private McVersion versionData;
+	private boolean useGameJarForLogging;
 	private boolean hasModLoader = false;
 
 	private static final GameTransformer TRANSFORMER = new GameTransformer(
@@ -130,6 +132,10 @@ public class MinecraftGameProvider implements GameProvider {
 
 	public Path getGameJar() {
 		return gameJars.get(0);
+	}
+	
+	public List<Path> getGameJars() {
+		return gameJars;
 	}
 
 	@Override
@@ -183,6 +189,10 @@ public class MinecraftGameProvider implements GameProvider {
 			} else if (envGameJar != null) {
 				classifier.process(envGameJar);
 			}
+
+			// Load all libraries in production dedicated server to allow for external log4j
+			// TODO revisit after #630 is merged and fix upstream, possibly by making FabricLauncher#getClassPath return actual classpath including that from META-INF?
+			Files.walk(Paths.get("libraries")).filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".jar")).forEach(lookupPaths::add);
 
 			classifier.process(launcher.getClassPath());
 
