@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +40,6 @@ import net.fabricmc.loader.impl.FabricLoaderImpl;
 import net.fabricmc.loader.impl.lib.gson.JsonReader;
 import net.fabricmc.loader.impl.lib.gson.JsonToken;
 import net.fabricmc.loader.impl.util.ExceptionUtil;
-import net.fabricmc.loader.impl.util.FileSystemUtil;
 import net.fabricmc.loader.impl.util.LoaderUtil;
 import net.fabricmc.loader.impl.util.SimpleClassPath;
 import net.fabricmc.loader.impl.util.SimpleClassPath.CpEntry;
@@ -66,7 +63,7 @@ public final class McVersionLookup {
 	private static final Pattern PRE_RELEASE_PATTERN = Pattern.compile(".+(?:-pre| Pre-[Rr]elease )(\\d+)");
 	private static final Pattern RELEASE_CANDIDATE_PATTERN = Pattern.compile(".+(?:-rc| [Rr]elease Candidate )(\\d+)");
 	private static final Pattern SNAPSHOT_PATTERN = Pattern.compile("(?:Snapshot )?(\\d+)w0?(0|[1-9]\\d*)([a-z])");
-	private static final Pattern EXPERIMENTAL_PATTERN = Pattern.compile("(?:.*[Ee]xperimental [Ss]napshot )(\\d+)");
+	private static final Pattern EXPERIMENTAL_PATTERN = Pattern.compile(".*[Ee]xperimental [Ss]napshot (\\d+)");
 	private static final Pattern BETA_PATTERN = Pattern.compile("(?:b|Beta v?)1\\.(\\d+(\\.\\d+)?[a-z]?(_\\d+)?[a-z]?)");
 	private static final Pattern ALPHA_PATTERN = Pattern.compile("(?:a|Alpha v?)[01]\\.(\\d+(\\.\\d+)?[a-z]?(_\\d+)?[a-z]?)");
 	private static final Pattern INDEV_PATTERN = Pattern.compile("(?:inf-|Inf?dev )(?:0\\.31 )?(\\d+(-\\d+)?)");
@@ -83,11 +80,13 @@ public final class McVersionLookup {
 			// Determine class version
 			if (entrypointClass != null) {
 				try (InputStream is = cp.getInputStream(LoaderUtil.getClassFileName(entrypointClass))) {
-					DataInputStream dis = new DataInputStream(is);
+					if (is != null) {
+						DataInputStream dis = new DataInputStream(is);
 
-					if (dis.readInt() == 0xCAFEBABE) {
-						dis.readUnsignedShort();
-						builder.setClassVersion(dis.readUnsignedShort());
+						if (dis.readInt() == 0xCAFEBABE) {
+							dis.readUnsignedShort();
+							builder.setClassVersion(dis.readUnsignedShort());
+						}
 					}
 				}
 			}
@@ -267,7 +266,7 @@ public final class McVersionLookup {
 		return null;
 	}
 
-	protected static String getRelease(String version) {
+	static String getRelease(String version) {
 		if (RELEASE_PATTERN.matcher(version).matches()) return version;
 
 		assert isProbableVersion(version);
@@ -378,7 +377,7 @@ public final class McVersionLookup {
 	 *
 	 * <p>MC Snapshot -> alpha, MC Pre-Release -> rc.
 	 */
-	protected static String normalizeVersion(String name, String release) {
+	static String normalizeVersion(String name, String release) {
 		if (release == null || name.equals(release)) {
 			String ret = normalizeSpecialVersion(name);
 			return ret != null ? ret : normalizeVersion(name);
@@ -844,10 +843,6 @@ public final class McVersionLookup {
 				}
 			};
 		}
-
-		private final String methodNameHint;
-		private String result;
-		private boolean foundInMethodHint;
 	}
 
 	private abstract static class InsnFwdMethodVisitor extends MethodVisitor {

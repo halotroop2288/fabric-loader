@@ -21,19 +21,15 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import net.fabricmc.loader.impl.util.LoaderUtil;
 
 import org.objectweb.asm.Opcodes;
 
@@ -44,7 +40,6 @@ import net.fabricmc.loader.api.LanguageAdapter;
 import net.fabricmc.loader.api.MappingResolver;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.ObjectShare;
-import net.fabricmc.loader.api.SemanticVersion;
 import net.fabricmc.loader.api.entrypoint.EntrypointContainer;
 import net.fabricmc.loader.impl.discovery.ArgumentModCandidateFinder;
 import net.fabricmc.loader.impl.discovery.ClasspathModCandidateFinder;
@@ -63,6 +58,7 @@ import net.fabricmc.loader.impl.metadata.EntrypointMetadata;
 import net.fabricmc.loader.impl.metadata.LoaderModMetadata;
 import net.fabricmc.loader.impl.metadata.VersionOverrides;
 import net.fabricmc.loader.impl.util.DefaultLanguageAdapter;
+import net.fabricmc.loader.impl.util.LoaderUtil;
 import net.fabricmc.loader.impl.util.SystemProperties;
 import net.fabricmc.loader.impl.util.log.Log;
 import net.fabricmc.loader.impl.util.log.LogCategory;
@@ -73,7 +69,7 @@ public final class FabricLoaderImpl extends net.fabricmc.loader.FabricLoader {
 
 	public static final int ASM_VERSION = Opcodes.ASM9;
 
-	public static final String VERSION = "0.14.11+babric";
+	public static final String VERSION = "0.14.11";
 	public static final String MOD_ID = "fabricloader";
 
 	public static final String CACHE_DIR_NAME = ".fabric"; // relative to game dir
@@ -81,9 +77,9 @@ public final class FabricLoaderImpl extends net.fabricmc.loader.FabricLoader {
 	public static final String REMAPPED_JARS_DIR_NAME = "remappedJars"; // relative to cache dir
 	private static final String TMP_DIR_NAME = "tmp"; // relative to cache dir
 
-	protected final Map<String, ModContainerImpl> modMap = new HashMap<>();
+	private final Map<String, ModContainerImpl> modMap = new HashMap<>();
 	private List<ModCandidate> modCandidates;
-	protected List<ModContainerImpl> mods = new ArrayList<>();
+	private final List<ModContainerImpl> mods = new ArrayList<>();
 
 	private final Map<String, LanguageAdapter> adapterMap = new HashMap<>();
 	private final EntrypointStorage entrypointStorage = new EntrypointStorage();
@@ -346,7 +342,13 @@ public final class FabricLoaderImpl extends net.fabricmc.loader.FabricLoader {
 		return objectShare;
 	}
 
-	public ModCandidate getModCandidate(String id) {
+	/**
+	 * @deprecated Has no practical use outside this class.
+	 * Still may be used by mods, anyway.
+	 */
+	@Deprecated
+	@SuppressWarnings("unused")
+	private ModCandidate getModCandidate(String id) {
 		if (modCandidates == null) return null;
 
 		for (ModCandidate mod : modCandidates) {
@@ -380,7 +382,7 @@ public final class FabricLoaderImpl extends net.fabricmc.loader.FabricLoader {
 		return FabricLauncherBase.getLauncher().isDevelopment();
 	}
 
-	private void addMod(ModCandidate candidate) throws ModResolutionException {
+	private void addMod(ModCandidate candidate) {
 		ModContainerImpl container = new ModContainerImpl(candidate);
 		mods.add(container);
 		modMap.put(candidate.getId(), container);

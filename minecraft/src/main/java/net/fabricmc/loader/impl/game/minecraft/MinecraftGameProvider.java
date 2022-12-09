@@ -84,7 +84,6 @@ public class MinecraftGameProvider implements GameProvider {
 	private final List<Path> miscGameLibraries = new ArrayList<>(); // libraries not relevant for loader's uses
 	private Collection<Path> validParentClassPath; // computed parent class path restriction (loader+deps)
 	private McVersion versionData;
-	private boolean useGameJarForLogging;
 	private boolean hasModLoader = false;
 
 	private static final GameTransformer TRANSFORMER = new GameTransformer(
@@ -130,8 +129,11 @@ public class MinecraftGameProvider implements GameProvider {
 		return Collections.singletonList(new BuiltinMod(gameJars, metadata.build()));
 	}
 
+	/**
+	 * @return gets the first game jar.
+	 */
 	public Path getGameJar() {
-		return gameJars.get(0);
+		return getGameJars().get(0);
 	}
 	
 	public List<Path> getGameJars() {
@@ -192,7 +194,14 @@ public class MinecraftGameProvider implements GameProvider {
 
 			// Load all libraries in production dedicated server to allow for external log4j
 			// TODO revisit after #630 is merged and fix upstream, possibly by making FabricLauncher#getClassPath return actual classpath including that from META-INF?
-			Files.walk(Paths.get("libraries")).filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".jar")).forEach(lookupPaths::add);
+			Files.walk(Paths.get("libraries"))
+					.filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".jar"))
+					.forEach(it -> {
+						try {
+							classifier.process(it);
+						} catch (IOException ignored) {
+						}
+					});
 
 			classifier.process(launcher.getClassPath());
 
@@ -468,7 +477,7 @@ public class MinecraftGameProvider implements GameProvider {
 		}
 
 		try {
-			invoker.invokeExact(arguments.toArray());
+			invoker.invokeExact((Object) arguments.toArray());
 		} catch (Throwable t) {
 			throw new FormattedException("Minecraft has crashed!", t);
 		}
