@@ -1,28 +1,43 @@
-repositories {
-	maven {
-		name = 'Mojang'
-		url = 'https://libraries.minecraft.net/'
-	}
+plugins {
+	id("java-library")
+	id("maven-publish")
 }
 
-dependencies {
-	api project(":")
+group = "net.betterthanadventure"
+base.archivesName = "FabricGameProvider"
+version = project.version
 
-	// log4j wrapper
-	compileOnly 'org.apache.logging.log4j:log4j-api:2.8.1'
-	// slf4j wrapper
-	compileOnly 'org.slf4j:slf4j-api:1.8.0-beta4'
-
-	// launchwrapper + dependencies
-	compileOnly ('net.minecraft:launchwrapper:1.12') {
-		transitive = false
+repositories {
+	mavenCentral()
+	maven {
+		url = "https://maven.fabricmc.net"
+		name = "FabricMC"
 	}
-	//implementation 'net.sf.jopt-simple:jopt-simple:5.0.3'
 }
 
 sourceSets {
-	main {
-		java.srcDirs = ['src/main/java', 'src/main/legacyJava']
+	main
+
+	client.compileClasspath += main.output
+	server.compileClasspath += main.output
+}
+
+dependencies {
+	clientImplementation("net.fabricmc:fabric-loader:${project.fabric_loader_version}")
+	serverImplementation("net.fabricmc:fabric-loader:${project.fabric_loader_version}")
+}
+
+tasks.withType(Jar).configureEach {it.enabled = false}
+
+tasks.withType(Test).configureEach {it.enabled = false}
+
+[sourceSets.client, sourceSets.server].forEach { set ->
+	tasks.register("${set.name}Jar", Jar) {
+		it.enabled = true
+		it.group = "build"
+		tasks.build.dependsOn(this)
+		it.archiveClassifier = set.name
+		it.from(sourceSets.client.output)
 	}
 }
 
@@ -34,15 +49,30 @@ tasks.withType(JavaCompile).configureEach {
 	}
 }
 
-jar {
-	enabled = false
-}
-
-test {
-	enabled = false
-}
-
 java {
 	sourceCompatibility = JavaVersion.VERSION_1_8
 	targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+publishing {
+	publications { pubContainer ->
+        create("mavenJava", MavenPublication) { publication ->
+            publication.artifactId = "FabricGameProvider"
+            publication.version = project.version
+            publication.artifact(tasks["clientJar"])
+            publication.artifact(tasks["serverJar"])
+            publication.pom.withXml {
+                Node provider = it.asNode()
+                def deps = provider.get("dependencies")
+                if (deps != null || deps.isEmpty()) {
+					deps = provider.appendNode("dependencies") as Node
+				}
+                Node fabricDependency = deps.appendNode("dependency")
+                fabricDependency.appendNode("groupId", "net.fabricmc")
+                fabricDependency.appendNode("artifactId", "fabric-loader")
+                fabricDependency.appendNode("version", fabric_loader_version)
+                fabricDependency.appendNode("scope", "compile")
+            }
+        }
+	}
 }
